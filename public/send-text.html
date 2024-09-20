@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Send Image ke WA number</title>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <style>
+      /* Gaya sederhana untuk loading indicator */
+      #loading {
+        display: none;
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        font-size: 20px;
+        background: rgba(0, 0, 0, 0.8);
+        color: white;
+        padding: 20px;
+        border-radius: 10px;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Send Text ke WA number</h1>
+    <form id="uploadForm">
+      <label for="number">Phone Number:</label><br />
+      <input
+        type="text"
+        id="number"
+        name="number"
+        placeholder="Enter phone number"
+        required
+      /><br /><br />
+
+      <label for="caption">Caption:</label><br />
+      <input
+        type="text"
+        id="caption"
+        name="caption"
+        placeholder="Enter caption"
+        required
+      /><br /><br />
+
+      <button type="button" id="uploadButton">Send</button>
+    </form>
+
+    <p id="status"></p>
+
+    <!-- Loading indicator -->
+    <div id="loading">Sending, please wait...</div>
+
+    <script>
+      $(document).ready(function () {
+        $("#uploadButton").on("click", function (e) {
+          e.preventDefault();
+
+          var formData = JSON.stringify({
+            number: $("#number").val(),
+            message: $("#caption").val(),
+          });
+
+          // Tampilkan loading indicator
+          $("#loading").show();
+          $("#status").text(""); // Bersihkan status
+
+          $.ajax({
+            url: "http://localhost/send-text",
+            type: "POST",
+            data: formData,
+            // headers: {
+            //   "Content-Type": "application/json",
+            // },
+            processData: false, // Jangan proses data
+            contentType: "application/json", // Jangan set tipe konten
+            success: function (response) {
+              // Sembunyikan loading indicator setelah berhasil
+              $("#loading").hide();
+              $("#status").text(JSON.stringify(response, null, 2)); // Tampilkan respon dari server
+            },
+            error: function (jqXHR, textStatus, errorThrown) {
+              // Sembunyikan loading indicator jika gagal
+              $("#loading").hide();
+              $("#status").text("Upload failed: " + textStatus);
+            },
+          });
+        });
+      });
+    </script>
+  </body>
+</html>
