@@ -4,6 +4,12 @@ const yargs = require("yargs");
 const multer = require("multer");
 const path = require("path");
 const fs = require("fs");
+require("dotenv").config();
+const { GoogleGenerativeAI } = require("@google/generative-ai");
+
+const apiKey = process.env.GEMINI_API_KEY;
+const wabotName = process.env.WABOT_NAME;
+const wabotSuffix = process.env.WABOT_SUFFIX;
 
 const app = express();
 const argv = yargs.argv;
@@ -42,16 +48,39 @@ venom
     session: wa_number, //name of session
   })
   .then((client) => {
-    client.onMessage((message) => {
+    const genAI = new GoogleGenerativeAI(apiKey);
+    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+
+    client.onMessage(async (message) => {
       if (message.body === "Hi" && message.isGroupMsg === false) {
         client
-          .sendText(message.from, "Welcome Bro")
+          .sendText(
+            message.from,
+            `Welcome friends, you can call me ${wabotName}`
+          )
           .then((result) => {
             console.log("Result: ", result); //return object success
           })
           .catch((erro) => {
             console.error("Error when sending: ", erro); //return object error
           });
+      } else {
+        const firstWord = message.body.split(" ")[0];
+        if (firstWord.toLowerCase() === wabotName.toLowerCase()) {
+          const prompt = message.body.replace(`${firstWord} `, "");
+          const result = await model.generateContent(
+            prompt + " " + wabotSuffix
+          );
+          //console.log(result.response.text());
+          client
+            .sendText(message.from, result.response.text())
+            .then((result) => {
+              console.log("Result: ", result); //return object success
+            })
+            .catch((erro) => {
+              console.error("Error when sending: ", erro); //return object error
+            });
+        }
       }
     });
 
