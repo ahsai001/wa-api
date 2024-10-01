@@ -134,3 +134,9 @@ dist
 tokens
 bun.lockb
 user_history
+
+# yarn
+yarn.lock
+
+# proxy
+.htaccess
