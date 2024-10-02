@@ -51,7 +51,7 @@ const userHistoryDir = path.join(__dirname, "user_history");
 async function ensureUserHistoryDir() {
   try {
     await fsp.mkdir(userHistoryDir, { recursive: true });
-    console.log("Folder 'user_history' siap.");
+    //console.log("Folder 'user_history' siap.");
   } catch (err) {
     console.error("Gagal membuat folder 'user_history':", err);
   }
@@ -67,7 +67,7 @@ async function saveMessageToFile(userId, sender, message) {
 
   try {
     await fsp.appendFile(filePath, formattedMessage);
-    console.log(`Percakapan berhasil disimpan untuk user ${userId}.`);
+    //console.log(`Percakapan berhasil disimpan untuk user ${userId}.`);
   } catch (err) {
     console.error(`Gagal menyimpan percakapan untuk user ${userId}:`, err);
   }
@@ -89,51 +89,83 @@ async function getChatHistoryFromFile(userId) {
   }
 }
 
+async function handleMessageByAI(model, from, prompt) {
+  await saveMessageToFile(from, "User", prompt + " " + wabotSuffix);
+  const history = await getChatHistoryFromFile(from);
+  const result = await model.generateContent(history);
+  await saveMessageToFile(from, "Bot", result.response.text());
+  return result;
+}
+
 // Inisialisasi Venom.js
 venom
   .create({
     session: wa_number, //name of session
   })
-  .then((client) => {
+  .then(async (client) => {
     // Inisialisasi  Gemini api
     const genAI = new GoogleGenerativeAI(apiKey);
     const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 
+    const hostInfo = await client.getHostDevice();
+    const clientId = `${hostInfo.id.user}@${hostInfo.id.server}`;
+
     // Handle message from user
     client.onMessage(async (message) => {
       //  Welcome message
-      if (message.body === "Hi" && message.isGroupMsg === false) {
-        client
-          .sendText(
-            message.from,
-            `Welcome friends, you can call me ${wabotName}`
-          )
-          .then((result) => {
-            console.log("Result: ", result); //return object success
-          })
-          .catch((erro) => {
-            console.error("Error when sending: ", erro); //return object error
-          });
-      } else {
-        const firstWord = message.body.split(" ")[0];
-        //  Chat with keyword
-        if (firstWord.toLowerCase() === wabotName.toLowerCase()) {
-          const prompt = message.body.replace(`${firstWord} `, "");
-
-          await saveMessageToFile(
-            message.from,
-            "User",
-            prompt + " " + wabotSuffix
-          );
-          const history = await getChatHistoryFromFile(message.from);
-          const result = await model.generateContent(history);
-          await saveMessageToFile(message.from, "Bot", result.response.text());
-
-          //Send response
+      if (message.isGroupMsg === false) {
+        // pesan japri
+        if (message.body === "Hi") {
           client
-            .sendText(message.from, result.response.text())
+            .sendText(
+              message.from,
+              `Welcome friends, you can call me ${wabotName}`
+            )
             .then((result) => {
-              console.log("Result: ", result); //return object success
+              //console.log("Result: ", result); //return object success
+            })
+            .catch((erro) => {
+              console.error("Error when sending: ", erro); //return object error
+            });
+        } else {
+          const firstWord = message.body.split(" ")[0];
+
+          //  Chat with keyword
+          if (firstWord.toLowerCase() === wabotName.toLowerCase()) {
+            const prompt = message.body.replace(`${firstWord} `, "");
+
+            const result = await handleMessageByAI(model, message.from, prompt);
+
+            //Send response
+            client
+              .reply(message.from, result.response.text(), message.id)
+              .then((result) => {
+                //console.log("Result: ", result); //return object success
+              })
+              .catch((erro) => {
+                console.error("Error when sending: ", erro); //return object error
+              });
+          }
+        }
+      } else {
+        // pesan group
+        if (
+          message.mentionedJidList.includes(clientId) &&
+          message.mentionedJidList.length == 1
+        ) {
+          const prompt = message.body.replace(/@\d+/g, "").trim();
+
+          const result = await handleMessageByAI(model, message.from, prompt);
+          client
+            .reply(
+              message.from,
+              `Halo ${message.sender.name || message.sender.verifiedName}` +
+                "\r\n\r\n" +
+                result.response.text(),
+              message.id
+            )
+            .then((result) => {
+              //console.log("Result: ", result); //return object success
             })
             .catch((erro) => {
               console.error("Error when sending: ", erro); //return object error
