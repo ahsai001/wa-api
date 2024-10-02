@@ -42,6 +42,14 @@
         required
       /><br /><br />
 
+      <!-- https://github.com/orkestral/venom/blob/master/docs/getting-started/basic-functions.md#chatting -->
+
+      <label for="caption">Phone Type:</label><br />
+      <select name="isGroup" id="isGroup">
+        <option value="true">Nomor Group</option>
+        <option value="false" selected>Nomor Biasa</option>
+      </select><br /><br />
+
       <button type="button" id="uploadButton">Send</button>
     </form>
 
@@ -58,6 +66,7 @@
           var formData = JSON.stringify({
             number: $("#number").val(),
             message: $("#caption").val(),
+            isGroup: $('#isGroup').find(":selected").val()
           });
 
           // Tampilkan loading indicator

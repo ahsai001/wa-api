@@ -142,9 +142,35 @@ venom
       }
     });
 
+    // Format Group
+    const formatGroup = (group) => {
+      if (group.endsWith('@g.us')) {
+          return group
+      }
+      let formatted = group.replace(/[^\d-]/g, '')
+      return (formatted += '@g.us')
+    }
+
+    // Formated
+    const formatPhone = (phone) => {
+      if (phone.endsWith('@c.us')) {
+          return phone
+      }
+      let formatted = phone.replace(/\D/g, '')
+      return (formatted += '@c.us')
+    }
+
     // Route untuk mengirim pesan
     app.post("/send-text", async (req, res) => {
-      const { number, message } = req.body;
+
+      /*
+       * number string
+       * message string
+       * isGroup boolean
+       */
+
+      const { message, number, isGroup } = req.body;
+      const numberFormat = isGroup ? formatGroup(number) : formatPhone(number);
 
       if (!number || !message) {
         return res.status(400).json({ error: "Nomor dan pesan diperlukan" });
@@ -152,7 +178,7 @@ venom
 
       try {
         // Kirim pesan menggunakan Venom
-        await client.sendText(number + "@c.us", message);
+        await client.sendText(numberFormat, message);
         res.json({ success: true, message: "Pesan berhasil dikirim!" });
       } catch (error) {
         console.error(error);
@@ -173,7 +199,7 @@ venom
       try {
         // Kirim gambar menggunakan Venom
         await client.sendImage(
-          number + "@c.us",
+          formatPhone(number),
           imagePath,
           req.file.originalname,
           caption || ""
@@ -207,7 +233,7 @@ venom
       try {
         // Kirim file menggunakan Venom
         await client.sendFile(
-          number + "@c.us",
+          formatPhone(number),
           filePath,
           req.file.originalname,
           caption || ""
