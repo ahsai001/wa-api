@@ -134,3 +134,12 @@ dist
 tokens
 bun.lockb
 user_history
+
+# yarn
+yarn.lock
+
+# npm
+package-lock.json
+
+# proxy
+.htaccess
