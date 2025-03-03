@@ -17,13 +17,15 @@ const port = argv.port;
 const wa_number = "no" + argv.wanumber;
 
 // Middleware untuk parsing JSON
-app.use(express.json());
+app.use(express.json({ strict: false }));
 
 // Middleware untuk parsing form input
 app.use(express.urlencoded({ extended: true }));
 
 // Set static folder untuk menyajikan file HTML dan aset lainnya
 app.use(express.static("public"));
+
+
 
 //destination uploaded file
 // Konfigurasi multer untuk menyimpan file
@@ -160,8 +162,8 @@ venom
             .reply(
               message.from,
               `Halo ${message.sender.name || message.sender.verifiedName}` +
-                "\r\n\r\n" +
-                result.response.text(),
+              "\r\n\r\n" +
+              result.response.text(),
               message.id
             )
             .then((result) => {
@@ -176,6 +178,7 @@ venom
 
     // Route untuk mengirim pesan
     app.post("/send-text", async (req, res) => {
+      //console.log(req.body);
       const { number, message } = req.body;
 
       if (!number || !message) {
@@ -183,6 +186,12 @@ venom
       }
 
       try {
+        // Periksa apakah nomor terdaftar di WhatsApp
+        let numberStatus = await client.checkNumberStatus(number + "@c.us");
+
+        if (!numberStatus.canReceiveMessage) {
+          return res.status(400).json({ success: false, message: "Nomor tidak terdaftar di WhatsApp" });
+        }
         // Kirim pesan menggunakan Venom
         await client.sendText(number + "@c.us", message);
         res.json({ success: true, message: "Pesan berhasil dikirim!" });
@@ -203,6 +212,12 @@ venom
       }
 
       try {
+        // Periksa apakah nomor terdaftar di WhatsApp
+        let numberStatus = await client.checkNumberStatus(number + "@c.us");
+
+        if (!numberStatus.canReceiveMessage) {
+          return res.status(400).json({ success: false, message: "Nomor tidak terdaftar di WhatsApp" });
+        }
         // Kirim gambar menggunakan Venom
         await client.sendImage(
           number + "@c.us",
@@ -237,6 +252,12 @@ venom
       }
 
       try {
+        // Periksa apakah nomor terdaftar di WhatsApp
+        let numberStatus = await client.checkNumberStatus(number + "@c.us");
+
+        if (!numberStatus.canReceiveMessage) {
+          return res.status(400).json({ success: false, message: "Nomor tidak terdaftar di WhatsApp" });
+        }
         // Kirim file menggunakan Venom
         await client.sendFile(
           number + "@c.us",
