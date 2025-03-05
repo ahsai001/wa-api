@@ -65,7 +65,8 @@ async function saveMessageToFile(userId, sender, message) {
 
   const fileName = `chat_history_${userId.replace(/[@.]/g, "_")}.txt`; // Ganti karakter yang tidak valid dalam nama file
   const filePath = path.join(userHistoryDir, fileName); // Simpan file di dalam folder user_history
-  const formattedMessage = `${sender}: ${message}\n`;
+  //const formattedMessage = `${sender}: ${message}\n`; //ini bikin respon bot, muncul ini --> Bot : >
+  const formattedMessage = `${message}\n`;
 
   try {
     await fsp.appendFile(filePath, formattedMessage);
